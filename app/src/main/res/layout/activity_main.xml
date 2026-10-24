@@ -18,7 +18,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="15dp"/>
+        android:layout_marginTop="20dp"/>
 
     <TextView
         android:id="@+id/subtitleText"
@@ -41,7 +41,7 @@
         app:cardBackgroundColor="@color/card_white"
         app:cardElevation="8dp"
         app:layout_constraintTop_toBottomOf="@id/subtitleText"
-        android:layout_marginTop="15dp">
+        android:layout_marginTop="30dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -80,38 +80,22 @@
         app:trackColor="#E5E7EB"
         app:trackCornerRadius="8dp"
         app:layout_constraintTop_toBottomOf="@id/configCard"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="20dp"
         android:visibility="gone"/>
 
-    <!-- کنسول لاگ مشکی -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/logCard"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/log_bg"
-        app:cardElevation="10dp"
+    <!-- متن وضعیت (جایگزین باکس لاگ) -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="آماده به کار"
+        android:textColor="@color/text_sub"
+        android:textSize="16sp"
+        android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/progressBar"
-        app:layout_constraintBottom_toTopOf="@id/buttonLayout"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp">
-
-        <ScrollView
-            android:id="@+id/logScroll"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="12dp">
-
-            <TextView
-                android:id="@+id/logText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/log_text"
-                android:textSize="11sp"
-                android:fontFamily="monospace"
-                android:text="[System Ready]"/>
-        </ScrollView>
-    </com.google.android.material.card.MaterialCardView>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="15dp"/>
 
     <!-- دکمه‌های استارت و استاپ -->
     <LinearLayout
@@ -121,34 +105,35 @@
         android:orientation="horizontal"
         android:weightSum="2"
         app:layout_constraintBottom_toTopOf="@+id/nekoBtn"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="15dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/startBtn"
             android:layout_width="0dp"
-            android:layout_height="55dp"
+            android:layout_height="60dp"
             android:layout_weight="1"
             android:text="START"
             android:textSize="16sp"
             android:textStyle="bold"
             app:cornerRadius="30dp"
             app:backgroundTint="@color/purple_main"
-            android:layout_marginEnd="6dp"/>
+            android:layout_marginEnd="8dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/stopBtn"
             android:layout_width="0dp"
-            android:layout_height="55dp"
+            android:layout_height="60dp"
             android:layout_weight="1"
             android:text="STOP"
             android:textSize="16sp"
             android:textStyle="bold"
             app:cornerRadius="30dp"
             app:backgroundTint="@color/btn_stop"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="8dp"
             android:enabled="false"/>
     </LinearLayout>
 
+    <!-- دکمه اتصال به NekoBox -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/nekoBtn"
         android:layout_width="match_parent"
@@ -159,99 +144,56 @@
         android:visibility="gone"
         app:cornerRadius="30dp"
         app:backgroundTint="@color/purple_main"
-        app:layout_constraintBottom_toTopOf="@id/hotspotCard"
-        android:layout_marginBottom="10dp"/>
+        app:layout_constraintBottom_toTopOf="@id/copyLayout"
+        android:layout_marginBottom="15dp"/>
 
-    <!-- کارت تنظیمات هات‌اسپات -->
+    <!-- کارت کپی لینک‌های تلگرام -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/hotspotCard"
+        android:id="@+id/copyLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="#F8F8F8"
-        app:cardElevation="4dp"
-        app:strokeColor="@color/purple_light"
-        app:strokeWidth="1dp"
+        app:cardCornerRadius="20dp"
+        app:cardBackgroundColor="@color/card_white"
+        app:cardElevation="6dp"
         app:layout_constraintBottom_toTopOf="@id/telegramText"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="15dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="12dp">
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="تنظیمات پروکسی برای دستگاه‌های دیگر (هات‌اسپات):"
+                android:text="کپی سریع پروکسی تلگرام:"
                 android:textColor="@color/text_main"
-                android:textSize="12sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/copyLocalBtn"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="کپی برای همین گوشی (Port 1080)"
+                android:textSize="13sp"
+                app:strokeColor="@color/purple_main"
+                android:textColor="@color/purple_main"
                 android:layout_marginBottom="8dp"/>
 
-            <LinearLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/copyLanBtn"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="2">
+                android:layout_height="50dp"
+                android:text="کپی برای گوشی دیگر (Hotspot / Port 2080)"
+                android:textSize="13sp"
+                app:strokeColor="@color/purple_main"
+                android:textColor="@color/purple_main"/>
 
-                <!-- کپی سرور (IP) -->
-                <LinearLayout
-                    android:id="@+id/copyServerLayout"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="?attr/selectableItemBackground"
-                    android:padding="8dp"
-                    android:layout_marginEnd="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Server (IP) 📋"
-                        android:textColor="@color/text_sub"
-                        android:textSize="11sp"/>
-                    <TextView
-                        android:id="@+id/ipValueText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="در حال یافتن..."
-                        android:textColor="@color/purple_main"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:fontFamily="monospace"/>
-                </LinearLayout>
-
-                <!-- کپی پورت -->
-                <LinearLayout
-                    android:id="@+id/copyPortLayout"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="?attr/selectableItemBackground"
-                    android:padding="8dp"
-                    android:layout_marginStart="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Port 📋"
-                        android:textColor="@color/text_sub"
-                        android:textSize="11sp"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="2080"
-                        android:textColor="@color/purple_main"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:fontFamily="monospace"/>
-                </LinearLayout>
-
-            </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
