@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stopBtn: MaterialButton
     private lateinit var nekoBtn: MaterialButton
     private lateinit var progressBar: LinearProgressIndicator
-    private lateinit var deploymentInput: TextInputEditText
+    private lateinit var secretKeyInput: TextInputEditText
     private lateinit var logText: TextView
     private lateinit var logScroll: ScrollView
 
@@ -34,9 +34,7 @@ class MainActivity : AppCompatActivity() {
                     logText.append("\n$logMsg")
                     logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
                     
-                    if (logMsg.contains("آماده‌سازی")) progressBar.progress = 20
-                    if (logMsg.contains("مجوز")) progressBar.progress = 40
-                    if (logMsg.contains("تنظیمات")) progressBar.progress = 60
+                    if (logMsg.contains("شروع")) progressBar.progress = 20
                     if (logMsg.contains("اجرای موتور")) progressBar.progress = 80
                 }
                 "GOOSE_READY" -> {
@@ -57,9 +55,30 @@ class MainActivity : AppCompatActivity() {
         stopBtn = findViewById(R.id.stopBtn)
         nekoBtn = findViewById(R.id.nekoBtn)
         progressBar = findViewById(R.id.progressBar)
-        deploymentInput = findViewById(R.id.deploymentIdInput)
+        secretKeyInput = findViewById(R.id.secretKeyInput)
         logText = findViewById(R.id.logText)
         logScroll = findViewById(R.id.logScroll)
+        val telegramText: TextView = findViewById(R.id.telegramText)
+
+        // لود کردن کلید ذخیره شده
+        val prefs = getSharedPreferences("JimShoPrefs", MODE_PRIVATE)
+        val savedKey = prefs.getString("SECRET_KEY", "")
+        secretKeyInput.setText(savedKey)
+
+        // باز کردن لینک تلگرام
+        telegramText.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/JimShoVPN"))
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "تلگرام نصب نیست", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // درخواست دسترسی نوتیفیکیشن (اندروید ۱۳+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+        }
 
         val filter = IntentFilter().apply {
             addAction("GOOSE_LOG")
@@ -72,11 +91,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         startBtn.setOnClickListener {
-            val id = deploymentInput.text.toString().trim()
-            if (id.isEmpty()) {
-                Toast.makeText(this, "Deployment ID را وارد کنید", Toast.LENGTH_SHORT).show()
+            val key = secretKeyInput.text.toString().trim()
+            if (key.isEmpty()) {
+                Toast.makeText(this, "Secret Key را وارد کنید", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            // ذخیره کلید برای دفعات بعد
+            prefs.edit().putString("SECRET_KEY", key).apply()
 
             progressBar.visibility = View.VISIBLE
             progressBar.progress = 0
@@ -86,18 +108,21 @@ class MainActivity : AppCompatActivity() {
             nekoBtn.visibility = View.GONE
 
             val intent = Intent(this, GooseService::class.java)
-            intent.putExtra("DEPLOYMENT_ID", id)
+            intent.putExtra("DEPLOYMENT_ID", key)
             startService(intent)
         }
 
         stopBtn.setOnClickListener {
-            stopService(Intent(this, GooseService::class.java))
+            val intent = Intent(this, GooseService::class.java)
+            intent.action = "STOP"
+            startService(intent)
+            
             startBtn.isEnabled = true
             startBtn.visibility = View.VISIBLE
             stopBtn.isEnabled = false
             nekoBtn.visibility = View.GONE
             progressBar.visibility = View.GONE
-            logText.text = "[System] اتصال قطع شد."
+            logText.text = "[System] متوقف شد."
             Toast.makeText(this, "تونل قطع شد", Toast.LENGTH_SHORT).show()
         }
 
