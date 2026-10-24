@@ -10,8 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,28 +26,32 @@ class MainActivity : AppCompatActivity() {
     private lateinit var nekoBtn: MaterialButton
     private lateinit var progressBar: LinearProgressIndicator
     private lateinit var secretKeyInput: TextInputEditText
-    private lateinit var logText: TextView
-    private lateinit var logScroll: ScrollView
-    private lateinit var ipValueText: TextView
-    private lateinit var copyServerLayout: LinearLayout
-    private lateinit var copyPortLayout: LinearLayout
+    private lateinit var statusText: TextView
+    private lateinit var copyLocalBtn: MaterialButton
+    private lateinit var copyLanBtn: MaterialButton
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                "GOOSE_LOG" -> {
-                    val logMsg = intent.getStringExtra("log") ?: ""
-                    logText.append("\n$logMsg")
-                    logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
-                    
-                    if (logMsg.contains("شروع")) progressBar.progress = 20
-                    if (logMsg.contains("اجرای موتور")) progressBar.progress = 80
+                "GOOSE_STATUS" -> {
+                    val msg = intent.getStringExtra("status") ?: ""
+                    statusText.text = msg
+                    statusText.setTextColor(getColor(R.color.text_sub))
                 }
                 "GOOSE_READY" -> {
                     progressBar.progress = 100
+                    statusText.text = "اتصال با موفقیت برقرار شد ✅"
+                    statusText.setTextColor(getColor(android.R.color.holo_green_dark))
                     startBtn.visibility = View.GONE
                     stopBtn.isEnabled = true
                     nekoBtn.visibility = View.VISIBLE
+                }
+                "GOOSE_ERROR" -> {
+                    progressBar.visibility = View.GONE
+                    statusText.text = "خطا در اتصال! ❌"
+                    statusText.setTextColor(getColor(android.R.color.holo_red_dark))
+                    startBtn.isEnabled = true
+                    stopBtn.isEnabled = false
                 }
             }
         }
@@ -64,12 +66,10 @@ class MainActivity : AppCompatActivity() {
         nekoBtn = findViewById(R.id.nekoBtn)
         progressBar = findViewById(R.id.progressBar)
         secretKeyInput = findViewById(R.id.secretKeyInput)
-        logText = findViewById(R.id.logText)
-        logScroll = findViewById(R.id.logScroll)
+        statusText = findViewById(R.id.statusText)
         val telegramText: TextView = findViewById(R.id.telegramText)
-        ipValueText = findViewById(R.id.ipValueText)
-        copyServerLayout = findViewById(R.id.copyServerLayout)
-        copyPortLayout = findViewById(R.id.copyPortLayout)
+        copyLocalBtn = findViewById(R.id.copyLocalBtn)
+        copyLanBtn = findViewById(R.id.copyLanBtn)
 
         val prefs = getSharedPreferences("JimShoPrefs", MODE_PRIVATE)
         val savedKey = prefs.getString("SECRET_KEY", "")
@@ -83,23 +83,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // کلیک روی IP برای کپی
-        copyServerLayout.setOnClickListener {
-            val ip = ipValueText.text.toString()
-            if (ip != "در حال یافتن..." && ip != "نامشخص") {
-                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("Server IP", ip))
-                Toast.makeText(this, "آی‌پی (Server) کپی شد: $ip", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "هنوز آی‌پی پیدا نشده است!", Toast.LENGTH_SHORT).show()
-            }
+        // دکمه کپی لینک برای همین گوشی
+        copyLocalBtn.setOnClickListener {
+            val link = "tg://socks?server=127.0.0.1&port=1080"
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("Proxy Link", link))
+            Toast.makeText(this, "لینک کپی شد! در مرورگر پیست کنید.", Toast.LENGTH_LONG).show()
         }
 
-        // کلیک روی پورت برای کپی
-        copyPortLayout.setOnClickListener {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("Port", "2080"))
-            Toast.makeText(this, "پورت کپی شد: 2080", Toast.LENGTH_SHORT).show()
+        // دکمه کپی لینک برای دستگاه‌های دیگر (هات‌اسپات)
+        copyLanBtn.setOnClickListener {
+            val ip = getLocalIpAddress()
+            if (ip != null) {
+                val link = "tg://socks?server=$ip&port=2080"
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Proxy Link", link))
+                Toast.makeText(this, "لینک کپی شد!\nIP: $ip", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "وای‌فای یا هات‌اسپات روشن نیست!", Toast.LENGTH_SHORT).show()
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -107,8 +109,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         val filter = IntentFilter().apply {
-            addAction("GOOSE_LOG")
+            addAction("GOOSE_STATUS")
             addAction("GOOSE_READY")
+            addAction("GOOSE_ERROR")
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
@@ -126,7 +129,8 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putString("SECRET_KEY", key).apply()
             progressBar.visibility = View.VISIBLE
             progressBar.progress = 0
-            logText.text = "[System] در حال شروع..."
+            statusText.text = "در حال اتصال..."
+            statusText.setTextColor(getColor(R.color.text_sub))
             startBtn.isEnabled = false
             stopBtn.isEnabled = true
             nekoBtn.visibility = View.GONE
@@ -146,7 +150,8 @@ class MainActivity : AppCompatActivity() {
             stopBtn.isEnabled = false
             nekoBtn.visibility = View.GONE
             progressBar.visibility = View.GONE
-            logText.text = "[System] متوقف شد."
+            statusText.text = "اتصال قطع شد"
+            statusText.setTextColor(getColor(R.color.text_sub))
             Toast.makeText(this, "تونل قطع شد", Toast.LENGTH_SHORT).show()
         }
 
@@ -164,18 +169,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // هر بار که اپ به صفحه می‌آید، آی‌پی را آپدیت می‌کند
-    override fun onResume() {
-        super.onResume()
-        val ip = getLocalIpAddress()
-        if (ip != null) {
-            ipValueText.text = ip
-        } else {
-            ipValueText.text = "نامشخص"
-        }
-    }
-
-    // تابع پیدا کردن آی‌پی IPv4 گوشی در شبکه (برای هات‌اسپات)
     private fun getLocalIpAddress(): String? {
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces()
