@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_primary">#673AB7</color>
-    <color name="purple_dark">#512DA8</color>
-    <color name="blue_dark">#1A237E</color>
-    <color name="white">#FFFFFF</color>
-    <color name="bg_gradient_start">#1A237E</color>
-    <color name="bg_gradient_end">#311B92</color>
-    <color name="text_secondary">#B39DDB</color>
+    <color name="bg_dark_1">#0F0C29</color>
+    <color name="bg_dark_2">#302B63</color>
+    <color name="bg_dark_3">#24243E</color>
+    <color name="neon_purple">#BB86FC</color>
+    <color name="neon_blue">#03DAC6</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B3B3B3</color>
+    <color name="btn_start_bg">#6200EE</color>
+    <color name="btn_stop_bg">#CF6679</color>
+    <color name="log_bg">#CC000000</color>
+    <color name="log_text">#00FF41</color>
 </resources>
