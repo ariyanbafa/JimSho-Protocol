@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +28,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: LinearProgressIndicator
     private lateinit var secretKeyInput: TextInputEditText
     private lateinit var statusText: TextView
+    private lateinit var ipValueText: TextView
+    private lateinit var copyServerLayout: LinearLayout
+    private lateinit var copyPortLayout: LinearLayout
     private lateinit var copyLocalBtn: MaterialButton
     private lateinit var copyLanBtn: MaterialButton
 
@@ -34,13 +38,12 @@ class MainActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 "GOOSE_STATUS" -> {
-                    val msg = intent.getStringExtra("status") ?: ""
-                    statusText.text = msg
+                    statusText.text = intent.getStringExtra("status") ?: ""
                     statusText.setTextColor(getColor(R.color.text_sub))
                 }
                 "GOOSE_READY" -> {
                     progressBar.progress = 100
-                    statusText.text = "اتصال با موفقیت برقرار شد ✅"
+                    statusText.text = "اتصال برقرار شد ✅"
                     statusText.setTextColor(getColor(android.R.color.holo_green_dark))
                     startBtn.visibility = View.GONE
                     stopBtn.isEnabled = true
@@ -67,9 +70,12 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         secretKeyInput = findViewById(R.id.secretKeyInput)
         statusText = findViewById(R.id.statusText)
-        val telegramText: TextView = findViewById(R.id.telegramText)
+        ipValueText = findViewById(R.id.ipValueText)
+        copyServerLayout = findViewById(R.id.copyServerLayout)
+        copyPortLayout = findViewById(R.id.copyPortLayout)
         copyLocalBtn = findViewById(R.id.copyLocalBtn)
         copyLanBtn = findViewById(R.id.copyLanBtn)
+        val telegramText: TextView = findViewById(R.id.telegramText)
 
         val prefs = getSharedPreferences("JimShoPrefs", MODE_PRIVATE)
         val savedKey = prefs.getString("SECRET_KEY", "")
@@ -83,24 +89,41 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // دکمه کپی لینک برای همین گوشی
+        // کلیک روی باکس Server
+        copyServerLayout.setOnClickListener {
+            val ip = ipValueText.text.toString()
+            if (ip != "در حال یافتن..." && ip != "نامشخص") {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Server", ip))
+                Toast.makeText(this, "Server کپی شد: $ip", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // کلیک روی باکس Port
+        copyPortLayout.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("Port", "2080"))
+            Toast.makeText(this, "Port کپی شد: 2080", Toast.LENGTH_SHORT).show()
+        }
+
+        // دکمه کپی پروکسی تلگرام برای همین گوشی
         copyLocalBtn.setOnClickListener {
             val link = "tg://socks?server=127.0.0.1&port=1080"
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("Proxy Link", link))
+            clipboard.setPrimaryClip(ClipData.newPlainText("Proxy", link))
             Toast.makeText(this, "لینک کپی شد! در مرورگر پیست کنید.", Toast.LENGTH_LONG).show()
         }
 
-        // دکمه کپی لینک برای دستگاه‌های دیگر (هات‌اسپات)
+        // دکمه کپی پروکسی تلگرام برای گوشی دیگر
         copyLanBtn.setOnClickListener {
             val ip = getLocalIpAddress()
             if (ip != null) {
                 val link = "tg://socks?server=$ip&port=2080"
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("Proxy Link", link))
+                clipboard.setPrimaryClip(ClipData.newPlainText("Proxy", link))
                 Toast.makeText(this, "لینک کپی شد!\nIP: $ip", Toast.LENGTH_LONG).show()
             } else {
-                Toast.makeText(this, "وای‌فای یا هات‌اسپات روشن نیست!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "هات‌اسپات روشن نیست!", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -166,6 +189,16 @@ class MainActivity : AppCompatActivity() {
                 if (launchIntent != null) startActivity(launchIntent)
                 else Toast.makeText(this, "NekoBox نصب نیست!", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val ip = getLocalIpAddress()
+        if (ip != null) {
+            ipValueText.text = ip
+        } else {
+            ipValueText.text = "نامشخص"
         }
     }
 
