@@ -3,10 +3,10 @@ package com.jimsho.protocol
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
+import java.io.InputStreamReader
 
 class GooseService : Service() {
     private var process: Process? = null
@@ -14,11 +14,21 @@ class GooseService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // بررسی دستور قطع کردن
+        if (intent?.action == "STOP") {
+            sendLog("در حال قطع اتصال...")
+            process?.destroy()
+            process = null
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         val deploymentId = intent?.getStringExtra("DEPLOYMENT_ID") ?: ""
         
         Thread {
             try {
-                // 1. استخراج فایل goose-client از داخل APK
+                sendLog("شروع آماده‌سازی...")
+                
                 val binaryFile = File(filesDir, "goose-client")
                 if (!binaryFile.exists()) {
                     val inputStream = assets.open("goose-client")
@@ -28,10 +38,9 @@ class GooseService : Service() {
                     outputStream.close()
                 }
                 
-                // 2. دادن مجوز اجرا
                 binaryFile.setExecutable(true)
+                sendLog("مجوز اجرا داده شد.")
 
-                // 3. ساخت فایل تنظیمات client_config.json
                 val configFile = File(filesDir, "client_config.json")
                 val configJson = """
                     {
@@ -47,26 +56,48 @@ class GooseService : Service() {
                     }
                 """.trimIndent()
                 configFile.writeText(configJson)
+                
+                sendLog("تنظیمات ساخته شد. اجرای موتور با پاسخ خودکار Y...")
 
-                // 4. اجرای پروسه
-                val pb = ProcessBuilder(binaryFile.absolutePath, "-config", configFile.absolutePath)
+                // ترفند پاسخ خودکار Y در لینوکس (echo y |)
+                val cmd = arrayOf("sh", "-c", "echo y | ${binaryFile.absolutePath} -config ${configFile.absolutePath}")
+                val pb = ProcessBuilder(*cmd)
                 pb.redirectErrorStream(true)
                 process = pb.start()
 
-                // ارسال پیام موفقیت به رابط کاربری
-                val successIntent = Intent("GOOSE_READY")
-                sendBroadcast(successIntent)
+                val reader = BufferedReader(InputStreamReader(process!!.inputStream))
+                var line: String?
+                var isReady = false
+
+                while (reader.readLine().also { line = it } != null) {
+                    val logLine = line ?: ""
+                    sendLog(logLine)
+                    
+                    if (logLine.contains("listening on") && !isReady) {
+                        isReady = true
+                        sendLog("✅ تونل با موفقیت برقرار شد!")
+                        sendBroadcast(Intent("GOOSE_READY"))
+                    }
+                }
 
             } catch (e: Exception) {
-                Log.e("GooseService", "Error: ${e.message}")
+                sendLog("❌ خطا: ${e.message}")
             }
         }.start()
 
         return START_STICKY
     }
 
+    private fun sendLog(message: String) {
+        val intent = Intent("GOOSE_LOG")
+        intent.putExtra("log", message)
+        sendBroadcast(intent)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         process?.destroy()
+        process = null
+        sendLog("سرویس متوقف شد.")
     }
 }
